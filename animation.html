@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reptile Tongue Attack</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      cursor: none;
+    }
+
+    .scene {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .bug {
+      position: absolute;
+      font-size: 30px;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .reptile {
+      position: absolute;
+      width: 100px;
+      height: 60px;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+
+    .inner {
+      width: 100%;
+      height: 100%;
+      transform-origin: center;
+    }
+
+    .body {
+      position: absolute;
+      width: 80px;
+      height: 40px;
+      background: green;
+      border-radius: 40px / 20px;
+      top: 10px;
+      left: 10px;
+    }
+
+    .head {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: green;
+      border-radius: 50%;
+      top: 0;
+      left: 75px;
+      z-index: 3;
+    }
+
+    .eye {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+      top: 8px;
+      left: 8px;
+    }
+
+    .tail {
+      position: absolute;
+      width: 40px;
+      height: 20px;
+      background: green;
+      border-radius: 50% 50% 0 0;
+      bottom: 5px;
+      left: -20px;
+      transform: rotate(-30deg);
+    }
+
+    .tongue {
+      position: absolute;
+      width: 6px;
+      height: 0px;
+      background: red;
+      top: 12px;
+      left: 25px;
+      border-radius: 4px;
+      transform-origin: top left;
+      display: none;
+      z-index: 1;
+    }
+
+    .leg {
+      position: absolute;
+      width: 10px;
+      height: 20px;
+      background: #4a8b45;
+      border-radius: 5px;
+      transform-origin: top center;
+    }
+
+    .front-left  { top: 30px; left: 10px; }
+    .front-right { top: 30px; left: 30px; }
+    .back-left   { top: 30px; left: 60px; }
+    .back-right  { top: 30px; left: 80px; }
+
+    .reptile.walking .front-left,
+    .reptile.walking .back-right {
+      animation: walk-leg 0.4s infinite ease-in-out;
+      animation-delay: 0s;
+      animation-fill-mode: both;
+    }
+
+    .reptile.walking .front-right,
+    .reptile.walking .back-left {
+      animation: walk-leg 0.4s infinite ease-in-out;
+      animation-delay: 0.2s;
+      animation-fill-mode: both;
+    }
+
+    @keyframes walk-leg {
+      0%, 100% { transform: rotate(15deg); }
+      50% { transform: rotate(-15deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="bug" id="bug">🐞</div>
+    <div class="reptile" id="reptile">
+      <div class="inner" id="reptileInner">
+        <div class="tail"></div>
+        <div class="body"></div>
+        <div class="head" id="head">
+          <div class="eye"></div>
+          <div class="tongue" id="tongue"></div>
+        </div>
+        <div class="leg front-left"></div>
+        <div class="leg front-right"></div>
+        <div class="leg back-left"></div>
+        <div class="leg back-right"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const bug = document.getElementById("bug");
+    const reptile = document.getElementById("reptile");
+    const inner = document.getElementById("reptileInner");
+    const tongue = document.getElementById("tongue");
+    const head = document.getElementById("head");
+
+    let bugX = window.innerWidth / 2;
+    let bugY = window.innerHeight / 2;
+    let reptileX = window.innerWidth / 4;
+    let reptileY = window.innerHeight / 2;
+    let caught = false;
+
+    function getTongueBaseCoords() {
+      const headRect = head.getBoundingClientRect();
+      return {
+        x: headRect.left + 25,
+        y: headRect.top + 12
+      };
+    }
+
+    document.addEventListener("mousemove", (e) => {
+      if (!caught) {
+        bugX = e.clientX;
+        bugY = e.clientY;
+        bug.style.transform = `translate(${bugX}px, ${bugY}px)`;
+      }
+    });
+
+    function showTongueAndCatch() {
+      const { x: tongueX, y: tongueY } = getTongueBaseCoords();
+      const dx = bugX - tongueX;
+      const dy = bugY - tongueY;
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      tongue.style.display = "block";
+      tongue.style.transform = `rotate(${angle}deg) scaleY(1)`;
+      tongue.style.height = `${dist}px`;
+
+      setTimeout(() => {
+        tongue.style.display = "none";
+        bug.style.display = "none";
+        caught = true;
+
+        setTimeout(() => {
+          caught = false;
+          bug.style.display = "block";
+          bugX = Math.random() * (window.innerWidth - 50);
+          bugY = Math.random() * (window.innerHeight - 50);
+          bug.style.transform = `translate(${bugX}px, ${bugY}px)`;
+        }, 3000);
+      }, 200); // time tongue hits
+    }
+
+    function moveReptile() {
+      const dx = bugX - reptileX;
+      const dy = bugY - reptileY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+
+      if (!caught && distance > 2) {
+        reptileX += Math.cos(angle) * 1.5;
+        reptileY += Math.sin(angle) * 1.5;
+        reptile.classList.add("walking");
+      } else {
+        reptile.classList.remove("walking");
+      }
+
+      if (!caught && distance < 60) {
+        showTongueAndCatch();
+      }
+
+      reptile.style.left = `${reptileX}px`;
+      reptile.style.top = `${reptileY}px`;
+      reptile.style.transform = `translate(-50%, -50%)`;
+      inner.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
+
+      requestAnimationFrame(moveReptile);
+    }
+
+    bug.style.transform = `translate(${bugX}px, ${bugY}px)`;
+    moveReptile();
+  </script>
+</body>
+</html>
